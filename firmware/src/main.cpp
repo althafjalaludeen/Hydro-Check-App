@@ -21,7 +21,7 @@
 // ---------------------------------------------------------------------------
 
 // Firebase Project Credentials
-#define API_KEY "AIzaSyBr6koS5B6IfNvlI5u_SpArr7qfPwVQjMU"
+#define API_KEY " Your API Key Value "
 #define USER_EMAIL "mainprojectstc@gmail.com"
 #define USER_PASSWORD "Althaf@123"
 #define PROJECT_ID "hydrocheck-e882a"

@@ -34,7 +34,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'TODO: Add Web API Key',
+    apiKey: ' Your API Key Value ',
     appId: 'TODO: Add Web App ID',
     messagingSenderId: '217576500634',
     projectId: 'hydrocheck-e882a',
@@ -45,7 +45,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'Your API Key',
+    apiKey: ' Your API Key Value ',
     appId: '1:217576500634:android:0922068e70ec9e58dede23',
     messagingSenderId: '217576500634',
     projectId: 'hydrocheck-e882a',
@@ -54,7 +54,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'TODO: Add iOS API Key',
+    apiKey: ' Your API Key Value ',
     appId: 'TODO: Add iOS App ID',
     messagingSenderId: '217576500634',
     projectId: 'hydrocheck-e882a',
@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'TODO: Add MacOS API Key',
+    apiKey: ' Your API Key Value ',
     appId: 'TODO: Add MacOS App ID',
     messagingSenderId: '217576500634',
     projectId: 'hydrocheck-e882a',
