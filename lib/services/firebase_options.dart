@@ -45,7 +45,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBr6koS5B6IfNvlI5u_SpArr7qfPwVQjMU',
+    apiKey: 'Your API Key',
     appId: '1:217576500634:android:0922068e70ec9e58dede23',
     messagingSenderId: '217576500634',
     projectId: 'hydrocheck-e882a',
