@@ -2,16 +2,18 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/device_model.dart';
-import '../services/authentication_service.dart';
-import '../services/device_service.dart';
+import '../services/firebase_authentication_service.dart';
+import '../services/firebase_device_service.dart'; // Real Service
 import '../services/location_service.dart';
 
 class AddDevicePage extends StatefulWidget {
   final User user;
+  final User? targetUser; // New optional target user
 
   const AddDevicePage({
     super.key,
     required this.user,
+    this.targetUser,
   });
 
   @override
@@ -20,10 +22,14 @@ class AddDevicePage extends StatefulWidget {
 
 class _AddDevicePageState extends State<AddDevicePage> {
   final _formKey = GlobalKey<FormState>();
-  final _authService = AuthenticationService();
-  final _deviceService = DeviceService();
+  final _authService = FirebaseAuthenticationService();
+  final _deviceService = FirebaseDeviceService(); // Real Service
+
+  List<User> _managedUsers = [];
+  User? _selectedUser;
 
   // Form controllers
+  final _deviceIdController = TextEditingController();
   final _deviceNameController = TextEditingController();
   final _serialNumberController = TextEditingController();
   final _buildingController = TextEditingController();
@@ -36,7 +42,32 @@ class _AddDevicePageState extends State<AddDevicePage> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.user.isAdmin) {
+      _loadManagedUsers();
+    }
+  }
+
+  Future<void> _loadManagedUsers() async {
+    try {
+      final users = await _authService.getUsersForAdmin(widget.user.uid);
+      if (mounted) {
+        setState(() {
+          // Add Admin themselves to the list of choices
+          _managedUsers = [widget.user, ...users];
+          // Pre-select targetUser if provided, otherwise default to Admin
+          _selectedUser = widget.targetUser ?? widget.user;
+        });
+      }
+    } catch (e) {
+      print('Error loading managed users: $e');
+    }
+  }
+
+  @override
   void dispose() {
+    _deviceIdController.dispose();
     _deviceNameController.dispose();
     _serialNumberController.dispose();
     _buildingController.dispose();
@@ -56,13 +87,12 @@ class _AddDevicePageState extends State<AddDevicePage> {
     });
 
     try {
-      // Generate device ID and API key
-      final deviceId = 'dev_${DateTime.now().millisecondsSinceEpoch}';
-      final apiKey = 'sk_live_${DateTime.now().millisecondsSinceEpoch}';
+      // Use manual device ID
+      final deviceId = _deviceIdController.text.trim();
 
       // Get GPS location
       final gpsLocation = await LocationService.getCurrentLocationWithTimeout();
-      
+
       // Create location
       final location = DeviceLocation(
         building: _buildingController.text.trim(),
@@ -73,37 +103,24 @@ class _AddDevicePageState extends State<AddDevicePage> {
         longitude: gpsLocation?['longitude'],
       );
 
-      // Create device
-      final device = Device(
-        deviceId: deviceId,
-        ownerUid: _user.uid,
-        deviceName: _deviceNameController.text.trim(),
-        deviceType: _deviceTypeController.text.trim(),
-        serialNumber: _serialNumberController.text.trim(),
-        location: location,
-        status: DeviceStatus.active,
-        apiKey: apiKey,
-        batteryLevel: 100.0,
-        firmwareVersion: '1.0.0',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        metadata: {
-          'model': _deviceTypeController.text.trim(),
-          'manufacturer': 'Unknown',
-          'max_readings_per_day': 1440,
-        },
-      );
-
       // Add device
-      await _deviceService.addDevice(device, _user.uid);
+      final targetUserUid = _selectedUser?.uid ?? _user.uid;
 
-      // Update user's device count
-      final newDeviceCount = _user.deviceCount + 1;
-      await _authService.updateDeviceCount(newDeviceCount);
+      await _deviceService.addDevice(
+        ownerUid: targetUserUid,
+        deviceName: _deviceNameController.text.trim(),
+        serialNumber: _serialNumberController.text.trim(),
+        deviceType: _deviceTypeController.text.trim(),
+        location: location,
+        customDeviceId: deviceId, // Pass the manual ID
+        adminUid: widget.user.uid, // Explicitly tag with the logged-in Admin's UID
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Device added successfully${gpsLocation != null ? ' with location' : ' (location unavailable)'}!')),
+          SnackBar(
+              content: Text(
+                  'Device added successfully${gpsLocation != null ? ' with location' : ' (location unavailable)'}!')),
         );
 
         // Wait a moment then go back to dashboard
@@ -197,6 +214,60 @@ class _AddDevicePageState extends State<AddDevicePage> {
               ),
               const SizedBox(height: 16),
 
+              // Admin-only User Selection
+              if (widget.user.isAdmin) ...[
+                const Text(
+                  'Assign to User',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<User?>(
+                  value: _selectedUser,
+                  decoration: InputDecoration(
+                    hintText: 'Myself (${widget.user.fullName})',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  items: [
+                    DropdownMenuItem<User?>(
+                      value: null,
+                      child: Text('Myself (${widget.user.fullName})'),
+                    ),
+                    ..._managedUsers.map((user) {
+                      return DropdownMenuItem<User?>(
+                        value: user,
+                        child: Text('${user.fullName} (${user.role})'),
+                      );
+                    }),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedUser = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              TextFormField(
+                controller: _deviceIdController,
+                enabled: !_isLoading,
+                decoration: InputDecoration(
+                  labelText: 'Device ID',
+                  hintText: 'e.g., device_001 (Match your ESP32 Code)',
+                  prefixIcon: const Icon(Icons.qr_code),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Device ID is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
               TextFormField(
                 controller: _deviceNameController,
                 enabled: !_isLoading,
@@ -204,7 +275,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   labelText: 'Device Name',
                   hintText: 'e.g., Main Tank - Floor 3',
                   prefixIcon: const Icon(Icons.devices),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -222,7 +294,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   labelText: 'Serial Number',
                   hintText: 'e.g., SN-2025-001',
                   prefixIcon: const Icon(Icons.numbers),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -240,7 +313,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   labelText: 'Device Type',
                   hintText: 'e.g., water_quality_sensor_v1',
                   prefixIcon: const Icon(Icons.category),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -265,7 +339,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   labelText: 'Building Name',
                   hintText: 'e.g., Main Building',
                   prefixIcon: const Icon(Icons.apartment),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -287,7 +362,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                         labelText: 'Floor',
                         hintText: '3',
                         prefixIcon: const Icon(Icons.stairs),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -311,7 +387,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   labelText: 'Room/Area',
                   hintText: 'e.g., Water Tank Room',
                   prefixIcon: const Icon(Icons.room_preferences),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -330,7 +407,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   labelText: 'Description',
                   hintText: 'Additional notes about the device location',
                   prefixIcon: const Icon(Icons.description),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -348,61 +426,72 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   children: [
                     const Text(
                       'Device Summary',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 12),
-                    _buildSummaryRow('Device Name', _deviceNameController.text.isEmpty
-                        ? '(Not set)'
-                        : _deviceNameController.text),
-                    _buildSummaryRow('Serial Number', _serialNumberController.text.isEmpty
-                        ? '(Not set)'
-                        : _serialNumberController.text),
-                    _buildSummaryRow('Type', _deviceTypeController.text.isEmpty
-                        ? '(Not set)'
-                        : _deviceTypeController.text),
+                    _buildSummaryRow(
+                        'Device Name',
+                        _deviceNameController.text.isEmpty
+                            ? '(Not set)'
+                            : _deviceNameController.text),
+                    _buildSummaryRow(
+                        'Serial Number',
+                        _serialNumberController.text.isEmpty
+                            ? '(Not set)'
+                            : _serialNumberController.text),
+                    _buildSummaryRow(
+                        'Type',
+                        _deviceTypeController.text.isEmpty
+                            ? '(Not set)'
+                            : _deviceTypeController.text),
                     const SizedBox(height: 8),
-                    _buildSummaryRow('Location', _buildingController.text.isEmpty
-                        ? '(Not set)'
-                        : '${_buildingController.text}, Floor ${_floorController.text}'),
+                    _buildSummaryRow(
+                        'Location',
+                        _buildingController.text.isEmpty
+                            ? '(Not set)'
+                            : '${_buildingController.text}, Floor ${_floorController.text}'),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _isLoading ? null : () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text('Cancel'),
+              const SizedBox(height: 80), // Space for bottom bar
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _isLoading ? null : () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _addDevice,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Device'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  child: const Text('Cancel'),
+                ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _addDevice,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Device'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B82F6),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

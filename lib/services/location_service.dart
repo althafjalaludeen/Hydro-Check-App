@@ -6,7 +6,7 @@ class LocationService {
     try {
       // Check permission status
       LocationPermission permission = await Geolocator.checkPermission();
-      
+
       if (permission == LocationPermission.denied) {
         // Request permission
         permission = await Geolocator.requestPermission();
@@ -14,18 +14,18 @@ class LocationService {
           return null; // Permission denied
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
         // Open app settings if permission is permanently denied
         openAppSettings();
         return null;
       }
-      
+
       // Get current position
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      
+
       return {
         'latitude': position.latitude,
         'longitude': position.longitude,
@@ -42,24 +42,24 @@ class LocationService {
   }) async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-      
+
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           return null;
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
         openAppSettings();
         return null;
       }
-      
+
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: timeout,
-      );
-      
+      ).timeout(timeout);
+
       return {
         'latitude': position.latitude,
         'longitude': position.longitude,

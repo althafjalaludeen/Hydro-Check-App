@@ -1,7 +1,7 @@
 // Enhanced Authentication Pages with Multi-Device Support
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
-import '../services/authentication_service.dart';
+import '../services/firebase_authentication_service.dart';
 
 // Enhanced Login Page
 class EnhancedLoginPage extends StatefulWidget {
@@ -20,7 +20,7 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
   bool _rememberMe = false;
   String? _errorMessage;
 
-  final _authService = AuthenticationService();
+  final _authService = FirebaseAuthenticationService();
 
   @override
   void dispose() {
@@ -50,14 +50,17 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
 
       if (response.success && response.user != null) {
         // Navigate to appropriate dashboard based on role
-        if (response.user!.isAdmin) {
+        final role = response.user!.role;
+        if (role == 'admin') {
           Navigator.pushReplacementNamed(context, '/admin-dashboard');
+        } else if (role == 'subordinate') {
+          Navigator.pushReplacementNamed(context, '/subordinate-dashboard');
         } else {
           Navigator.pushReplacementNamed(context, '/user-dashboard');
         }
       } else {
         setState(() {
-          _errorMessage = response.error ?? 'Login failed';
+          _errorMessage = response.message.isNotEmpty ? response.message : (response.error ?? 'Login failed');
         });
       }
     } catch (e) {
@@ -80,41 +83,89 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
     );
   }
 
-  Future<void> _quickAdminLogin() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
 
-    try {
-      final loginRequest = LoginRequest(
-        email: 'admin@.com',
-        password: '123',
-        rememberMe: false,
-      );
+  Future<void> _showForgotPasswordDialog() async {
+    final emailController = TextEditingController(text: _emailController.text);
+    bool isResetting = false;
 
-      final response = await _authService.login(loginRequest);
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Reset Password'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Enter your email address to receive a password reset link.'),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email Address',
+                      icon: Icon(Icons.email),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isResetting ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isResetting
+                      ? null
+                      : () async {
+                          final email = emailController.text.trim();
+                          if (email.isEmpty || !email.contains('@')) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please enter a valid email address')),
+                            );
+                            return;
+                          }
 
-      if (!mounted) return;
-
-      if (response.success && response.user != null) {
-        Navigator.pushReplacementNamed(context, '/admin-dashboard');
-      } else {
-        setState(() {
-          _errorMessage = response.error ?? 'Login failed';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An error occurred: $e';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+                          setDialogState(() => isResetting = true);
+                          try {
+                            await _authService.forgotPassword(email);
+                            if (mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Password reset link sent! Check your email.'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() => isResetting = false);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString()),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  child: isResetting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Send Link'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -194,7 +245,8 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline, color: Colors.red.shade600),
+                              Icon(Icons.error_outline,
+                                  color: Colors.red.shade600),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -291,7 +343,7 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
                           const Text('Remember me'),
                           const Spacer(),
                           TextButton(
-                            onPressed: _isLoading ? null : () {},
+                            onPressed: _isLoading ? null : _showForgotPasswordDialog,
                             child: const Text('Forgot password?'),
                           ),
                         ],
@@ -335,50 +387,22 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
                       const SizedBox(height: 16),
 
                       // Register Link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          const Text('Don\'t have an account? '),
+                          const Text('Register new organization? '),
                           TextButton(
                             onPressed: _isLoading ? null : _navigateToRegister,
                             child: const Text(
-                              'Sign Up',
+                              'Sign Up (Admin)',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
                       ),
 
-                      // Demo credentials hint
                       const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Demo Credentials:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Admin: admin@building.com / 123',
-                              style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                            ),
-                            Text(
-                              'User: user@building.com / 123',
-                              style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -387,15 +411,6 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _isLoading ? null : _quickAdminLogin,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF3B82F6),
-        tooltip: 'Quick Admin Login',
-        mini: true,
-        child: const Icon(Icons.admin_panel_settings),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
     );
   }
 }
@@ -423,7 +438,7 @@ class _EnhancedRegistrationPageState extends State<EnhancedRegistrationPage> {
   String? _errorMessage;
   String? _successMessage;
 
-  final _authService = AuthenticationService();
+  final _authService = FirebaseAuthenticationService();
 
   @override
   void dispose() {
@@ -459,6 +474,7 @@ class _EnhancedRegistrationPageState extends State<EnhancedRegistrationPage> {
         fullName: _fullNameController.text.trim(),
         mobileNumber: _mobileNumberController.text.trim(),
         location: _locationController.text.trim(),
+        role: 'admin',
         preferences: {
           'theme': 'light',
           'notifications_enabled': true,
@@ -477,14 +493,14 @@ class _EnhancedRegistrationPageState extends State<EnhancedRegistrationPage> {
         await Future.delayed(const Duration(seconds: 2));
 
         if (mounted) {
-          // Navigate directly to UserDashboard with the user object
+          // Navigate directly to AdminDashboard with the user object
           if (response.user != null) {
-            Navigator.pushReplacementNamed(context, '/user-dashboard');
+            Navigator.pushReplacementNamed(context, '/admin-dashboard');
           }
         }
       } else {
         setState(() {
-          _errorMessage = response.error ?? 'Registration failed';
+          _errorMessage = response.message.isNotEmpty ? response.message : (response.error ?? 'Registration failed');
         });
       }
     } catch (e) {
@@ -543,7 +559,7 @@ class _EnhancedRegistrationPageState extends State<EnhancedRegistrationPage> {
 
                       // Title
                       const Text(
-                        'Create Account',
+                        'Organization Signup',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -551,7 +567,7 @@ class _EnhancedRegistrationPageState extends State<EnhancedRegistrationPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Join our monitoring system',
+                        'Register as an Administrator',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],

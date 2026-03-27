@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydroCheck Project Report</title>
+    <style>
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css');
+        body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+            font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+        }
+        @media (max-width: 767px) {
+            body { padding: 15px; }
+        }
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+        }
+        @media print {
+            body { padding: 0; }
+            #print-btn { display: none; }
+        }
+        #print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 100;
+        }
+        #print-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <button id="print-btn" onclick="window.print()">🖨️ Print to PDF</button>
+    <div id="content" class="markdown-body"></div>
+
+    <script id="markdown-content" type="text/template">
+# HydroCheck — Water Quality Monitoring System
+## Complete Project Report
+
+---
+
+## 1. Introduction
+
+**HydroCheck** is an IoT-based water quality monitoring system that combines embedded hardware (ESP32) with a cross-platform mobile application (Flutter) and a cloud backend (Google Firebase). The system enables real-time monitoring of water safety parameters — **pH**, **Temperature**, and **TDS (Total Dissolved Solids)** — with automatic safety analysis, alert generation, and historical data tracking.
+
+> [!NOTE]
+> **Project Name:** HydroCheck  
+> **Technology Stack:** ESP32 (PlatformIO/Arduino), Flutter (Dart), Google Firebase  
+> **Target Platforms:** Android, iOS, Web  
+> **Version:** 1.0.0+1
+
+---
+
+## 2. System Architecture
+
+The system follows a standard 4-layer IoT architecture:
+
+```mermaid
+graph LR
+    subgraph Hardware["🔧 Perceptual Layer"]
+        S1[pH Sensor]
+        S2[DS18B20 Temp]
+        S3[TDS Sensor]
+        LCD[16x2 LCD]
+    end
+    subgraph MCU["⚡ ESP32"]
+        FW[Firmware v2]
+    end
+    subgraph Cloud["☁️ Firebase"]
+        FS[Cloud Firestore]
+        FA[Firebase Auth]
+    end
+    subgraph App["📱 Flutter App"]
+        UD[User Dashboard]
+        AD[Admin Dashboard]
+        AL[Alert System]
+    end
+
+    S1 --> FW
+    S2 --> FW
+    S3 --> FW
+    FW --> LCD
+    FW -->|Wi-Fi| FS
+    FS -->|Real-time Sync| UD
+    FS --> AD
+    FA --> UD
+    FA --> AD
+    UD --> AL
+```
+
+| Layer | Component | Technology |
+| :--- | :--- | :--- |
+| **Perceptual** | Sensors (pH, TDS, DS18B20) + LCD | Analog/Digital sensors |
+| **Network** | Wi-Fi connectivity | ESP32 Wi-Fi + WiFiManager captive portal |
+| **Cloud** | Data storage & auth | Firebase Firestore + Firebase Auth |
+| **Application** | Mobile app | Flutter (Dart), Material Design 3 |
+
+---
+
+## 3. Hardware Specifications
+
+### 3.1 Microcontroller
+- **Model:** ESP32 Dev Module
+- **Framework:** Arduino (via PlatformIO)
+- **Connectivity:** 2.4 GHz Wi-Fi (auto-configured via WiFiManager captive portal)
+- **Partition Scheme:** `huge_app.csv` (for large firmware with Firebase library)
+
+### 3.2 Sensors & Modules
+
+| Component | Function | ESP32 Pin | Interface | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **DS18B20** | Temperature Sensor | GPIO 4 | OneWire (Digital) | 4.7 kΩ pull-up required |
+| **pH Sensor (Industrial V3.0)** | Acidity/Alkalinity | GPIO 33 | Analog | Voltage divider recommended |
+| **TDS Sensor** | Total Dissolved Solids | GPIO 34 | Analog | 0–2.3 V output, safe for ESP32 |
+| **Turbidity Sensor** | Water clarity | GPIO 35 | Analog | Voltage divider **required** (4.5 V out) |
+| **16x2 LCD (JHD162A)** | Local data display | GPIO 18, 19, 21, 22, 23, 25 | Parallel 4-bit | PWM contrast via GPIO 26 |
+
+### 3.3 Wiring Summary (LCD Pinout)
+
+| LCD Pin | Function | Connection |
+| :--- | :--- | :--- |
+| Pin 1 (VSS) | Ground | GND |
+| Pin 2 (VDD) | Power | VIN (5V) |
+| Pin 3 (V0) | Contrast | GPIO 26 (PWM, value=75) |
+| Pin 4 (RS) | Register Select | GPIO 18 |
+| Pin 5 (RW) | Read/Write | GND |
+| Pin 6 (E) | Enable | GPIO 19 |
+| Pin 11–14 (D4–D7) | Data | GPIO 21, 22, 23, 25 |
+| Pin 15 (A) | Backlight + | 5V |
+| Pin 16 (K) | Backlight − | GND |
+
+---
+
+## 4. Firmware Design
+
+**Source:** [main.cpp](file:///x:/clgProject/hydrocheck/firmware/src/main.cpp) (239 lines)  
+**Build System:** PlatformIO ([platformio.ini](file:///x:/clgProject/hydrocheck/firmware/platformio.ini))
+
+### 4.1 Libraries Used
+
+| Library | Version | Purpose |
+| :--- | :--- | :--- |
+| `OneWire` | ^2.3.8 | DS18B20 communication |
+| `DallasTemperature` | ^3.11.0 | Temperature reading abstraction |
+| `LiquidCrystal` | ^1.0.7 | LCD 4-bit parallel control |
+| `Firebase Arduino Client` | ^4.4.14 | Firestore REST API integration |
+| `WiFiManager` | latest | Captive portal Wi-Fi setup |
+
+### 4.2 Firmware Flow
+
+```mermaid
+flowchart TD
+    A[Power On] --> B[Init Sensors & LCD]
+    B --> C[WiFiManager: Auto-Connect or<br>Create 'HydroCheck-Setup' AP]
+    C --> D{Wi-Fi OK?}
+    D -->|Yes| E[Init Firebase + NTP Time Sync]
+    D -->|No| F[Run Offline — LCD only]
+    E --> G[Main Loop]
+    F --> G
+    G --> H[Read pH, Temp, TDS]
+    H --> I[Display on LCD — cycle every 3s]
+    H --> J{Every 5 seconds?}
+    J -->|Yes| K[Build JSON & Send to Firestore]
+    J -->|No| G
+    K --> L{isSafe? pH 6.5–8.5,<br>Temp < 30°C, TDS < 500}
+    L --> G
+```
+
+### 4.3 Sensor Calibration Formulas
+
+| Parameter | Formula | Notes |
+| :--- | :--- | :--- |
+| **pH** | `7.0 + ((1.25 - V) / 0.18) + 1.5` | V = ADC × 3.3/4095; +1.5 calibration offset; clamped to 0–14 |
+| **TDS** | `(133.42V³ − 255.86V² + 857.39V) × 0.5` | Polynomial regression formula |
+| **Temperature** | DallasTemperature library | Reads −127 → defaults to 25 °C |
+
+### 4.4 Firebase Data Path
+```
+devices/{DEVICE_ID}/readings/reading_{millis}
+```
+Each document contains: `readingId`, `deviceId`, `timestamp` (ISO 8601), `parameters` (map: pH, temperature, tds), `isSafe` (boolean).
+
+### 4.5 LCD Display Rotation
+
+| Screen | Line 1 | Line 2 |
+| :--- | :--- | :--- |
+| Screen 1 (3s) | `Temp: XX.X C` | `pH:   X.X` |
+| Screen 2 (3s) | `TDS: XXX ppm` | `WiFi: OK / OFFLINE` |
+
+---
+
+## 5. Mobile Application (Flutter)
+
+**Entry Point:** [main.dart](file:///x:/clgProject/hydrocheck/lib/main.dart)
+
+### 5.1 Project Dependencies (`pubspec.yaml`)
+
+| Package | Version | Purpose |
+| :--- | :--- | :--- |
+| `firebase_core` | ^2.27.0 | Firebase initialization |
+| `firebase_auth` | ^4.17.5 | Email/password authentication |
+| `cloud_firestore` | ^4.15.5 | NoSQL real-time database |
+| `firebase_messaging` | ^14.7.15 | Push notifications |
+| `firebase_storage` | ^11.6.9 | File/image storage |
+| `fl_chart` | ^1.1.1 | Line charts & graphs |
+| `geolocator` | ^9.0.2 | GPS coordinates |
+| `crypto` | ^3.0.2 | Hashing utilities |
+
+### 5.2 App Architecture
+
+```
+lib/
+├── main.dart                         # Entry point, routing, auth check
+├── models/
+│   ├── user_model.dart               # User, AuthResponse, LoginRequest, RegistrationRequest
+│   └── device_model.dart             # Device, DeviceLocation, DeviceStatus, DeviceMetadata
+├── services/
+│   ├── firebase_service.dart         # Firebase init wrapper
+│   ├── firebase_options.dart         # Platform-specific Firebase config
+│   ├── firebase_authentication_service.dart  # Login, Register, Logout, profile update
+│   ├── firebase_device_service.dart  # CRUD operations for devices
+│   ├── firebase_water_reading_service.dart   # Save/query sensor readings
+│   ├── firebase_alert_service.dart   # Alert creation & management
+│   ├── water_quality_alert_service.dart      # WHO-standard safety checks
+│   ├── authentication_service.dart   # Auth abstraction layer
+│   ├── device_service.dart           # Device abstraction layer
+│   └── location_service.dart         # GPS location via Geolocator
+├── pages/
+│   ├── authentication_pages.dart     # Login + Registration (814 lines)
+│   ├── user_dashboard.dart           # Main user view (1822 lines)
+│   ├── admin_dashboard.dart          # Admin fleet view (746 lines)
+│   ├── admin_device_details.dart     # Detailed device view for admin
+│   ├── add_device_page.dart          # Device onboarding
+│   ├── parameter_detail_page.dart    # Individual parameter deep-dive
+│   ├── reading_history_page.dart     # Historical reading explorer
+│   └── test_history_page.dart        # "Test Now" results history
+└── widgets/
+    └── device_card_widget.dart       # Reusable device card component
+```
+
+### 5.3 Data Models
+
+#### User Model ([user_model.dart](file:///x:/clgProject/hydrocheck/lib/models/user_model.dart))
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `uid` | String | Firebase Auth UID |
+| `email` | String | User email |
+| `fullName` | String | Full name |
+| `mobileNumber` | String | Contact number |
+| `role` | String | `"user"` or `"admin"` |
+| `deviceCount` | int | Number of devices owned |
+| `location` | String | Organization/building name |
+| `isActive` | bool | Account status |
+| `preferences` | Map | Theme, notification settings |
+
+> Includes helper classes: `AuthResponse`, `RegistrationRequest`, `LoginRequest`, `UserUpdate`
+
+#### Device Model ([device_model.dart](file:///x:/clgProject/hydrocheck/lib/models/device_model.dart))
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `deviceId` | String | Unique device identifier |
+| `ownerUid` | String | Owner's Firebase UID |
+| `deviceName` | String | Human-readable name |
+| `deviceType` | String | e.g., `water_quality_sensor_v1` |
+| `serialNumber` | String | Hardware serial |
+| `location` | DeviceLocation | Building, floor, room, lat/long |
+| `status` | DeviceStatus | `active`, `inactive`, `maintenance`, `offline` |
+| `batteryLevel` | double | 0–100% |
+| `firmwareVersion` | String | Current firmware version |
+
+---
+
+## 6. Firebase Backend (Firestore Schema)
+
+```mermaid
+erDiagram
+    USERS ||--o{ DEVICES : owns
+    DEVICES ||--o{ READINGS : generates
+    DEVICES ||--o{ TEST_RESULTS : stores
+    USERS ||--o{ ALERTS : receives
+
+    USERS {
+        string uid PK
+        string email
+        string full_name
+        string mobile_number
+        string role
+        int device_count
+        string location
+        boolean is_active
+        map preferences
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    DEVICES {
+        string deviceId PK
+        string ownerUid FK
+        string deviceName
+        string deviceType
+        string serialNumber
+        map location
+        string status
+        string apiKey
+        double batteryLevel
+        string firmwareVersion
+        timestamp createdAt
+    }
+
+    READINGS {
+        string readingId PK
+        string deviceId FK
+        timestamp timestamp
+        map parameters
+        boolean isSafe
+    }
+
+    TEST_RESULTS {
+        double pH
+        double temperature
+        double tds
+        boolean isSafe
+        int samples
+        timestamp timestamp
+    }
+
+    ALERTS {
+        string alertId PK
+        string deviceId FK
+        string ownerUid FK
+        string type
+        string severity
+        string message
+        boolean acknowledged
+        timestamp createdAt
+    }
+```
+
+### Firestore Collections
+
+| Collection Path | Description |
+| :--- | :--- |
+| `users/{uid}` | User profiles |
+| `devices/{deviceId}` | Device metadata & config |
+| `devices/{deviceId}/readings/{readingId}` | Real-time sensor data from ESP32 |
+| `devices/{deviceId}/test_results/{docId}` | "Test Now" averaged results |
+| `alerts/{alertId}` | Safety & health alerts |
+
+---
+
+## 7. Key Features
+
+### 7.1 Real-time Monitoring
+- ESP32 pushes fresh sensor data to Firestore every **5 seconds**
+- Flutter app listens via Firestore real-time streams (`.snapshots()`)
+- Dashboard shows live **gauges** for pH, Temperature, and TDS
+- Data freshness indicator — marks ESP32 as offline if no data within **30 seconds**
+- LCD cycles through readings locally every 3 seconds
+
+### 7.2 "Test Now" Feature
+- User initiates a water quality test from the dashboard
+- Collects **multiple samples** over a configurable period and **averages** the results
+- Results are displayed in a dialog with per-parameter safety indicators
+- Results are **saved to Firestore** (`devices/{deviceId}/test_results/`)
+- Dedicated **Test History** page shows all past test results in scrollable cards
+
+### 7.3 Water Quality Safety Analysis
+The `WaterQualityChecker` evaluates readings against established standards:
+
+| Parameter | Safe Range | Standard |
+| :--- | :--- | :--- |
+| **pH** | 6.5 – 8.5 | WHO Guidelines |
+| **Temperature** | < 30 °C (firmware) / < 32 °C (app) | General potable water |
+| **TDS** | < 500 ppm | WHO Guidelines |
+
+- Visual **red/green** safety badges on every reading card
+- Detailed alert dialogs explaining exactly which parameters are unsafe
+
+### 7.4 Alert System
+- **Automatic alert generation** when readings exceed safe thresholds
+- Alert types: Water Quality, Battery Low, Device Offline
+- Stored in Firestore with severity levels (`critical`, `warning`, `info`)
+- **Acknowledgement workflow** — alerts can be marked as resolved
+- Real-time alert streams with unacknowledged count tracking
+
+### 7.5 Role-Based Access Control
+| Role | Dashboard | Capabilities |
+| :--- | :--- | :--- |
+| **User** | Single-device monitoring | View readings, Test Now, View History, Profile |
+| **Admin** | Multi-device fleet overview | All user features + manage all devices, filter by status |
+
+- Role determined by `deviceCount` (>1 = admin logic) and stored `role` field
+- Separate dashboards: `UserDashboard` vs `AdminDashboard`
+
+### 7.6 Wi-Fi Configuration (Captive Portal)
+- **No hardcoded Wi-Fi credentials** in firmware
+- On first boot (or if saved WiFi fails), ESP32 creates hotspot: **"HydroCheck-Setup"**
+- User connects via phone/laptop and enters Wi-Fi credentials through a web portal
+- Credentials are saved for automatic reconnection
+- Portal times out after **180 seconds** and continues in offline mode
+
+### 7.7 GPS Location Tracking
+- **Geolocator** package captures precise GPS coordinates when a device is added
+- Location metadata includes: Building, Floor, Room, Latitude, Longitude, Description
+- Displayed on both User and Admin dashboards
+
+### 7.8 Historical Data & Charts
+- **fl_chart** library renders line graphs for pH, Temperature, and TDS trends
+- `ReadingHistoryPage` — browse all historical readings
+- `TestHistoryPage` — view "Test Now" results with safe/unsafe badges
+- `ParameterDetailPage` — drill into individual parameter analytics
+
+---
+
+## 8. Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant App as Flutter App
+    participant FA as Firebase Auth
+    participant FS as Firestore
+
+    U->>App: Enter email & password
+    App->>FA: signInWithEmailAndPassword()
+    FA-->>App: UserCredential + UID
+    App->>FS: Fetch users/{uid}
+    FS-->>App: User profile (role, name, etc)
+    alt role == "admin"
+        App->>U: Navigate to Admin Dashboard
+    else role == "user"
+        App->>U: Navigate to User Dashboard
+    end
+```
+
+- **Registration:** Creates Firebase Auth user → stores profile in `users/{uid}`
+- **Login:** Authenticates via Firebase Auth → fetches profile from Firestore
+- **Session Persistence:** `checkAuthStatus()` on app startup auto-restores sessions
+- **Logout:** Signs out of Firebase Auth, clears local state
+
+---
+
+## 9. Services Layer Summary
+
+| Service | File | Key Responsibilities |
+| :--- | :--- | :--- |
+| `FirebaseService` | [firebase_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_service.dart) | Firebase initialization |
+| `FirebaseAuthenticationService` | [firebase_authentication_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_authentication_service.dart) | Register, Login, Logout, Profile update (Singleton) |
+| `FirebaseDeviceService` | [firebase_device_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_device_service.dart) | Device CRUD, status updates, real-time streams (Singleton) |
+| `FirebaseWaterReadingService` | [firebase_water_reading_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_water_reading_service.dart) | Save readings, history queries, averages, cleanup |
+| `FirebaseAlertService` | [firebase_alert_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_alert_service.dart) | Alert creation (water quality, battery, offline), acknowledgement |
+| `WaterQualityChecker` | [water_quality_alert_service.dart](file:///x:/clgProject/hydrocheck/lib/services/water_quality_alert_service.dart) | WHO-standard safety evaluation, UI alert dialogs |
+| `LocationService` | [location_service.dart](file:///x:/clgProject/hydrocheck/lib/services/location_service.dart) | GPS permission handling, coordinate capture |
+
+---
+
+## 10. Routing & Navigation
+
+| Route | Page | Description |
+| :--- | :--- | :--- |
+| `/login` | `EnhancedLoginPage` | Email/password login with admin quick-login |
+| `/register` | `EnhancedRegistrationPage` | New user registration |
+| `/user-dashboard` | `UserDashboard` | Single-device monitoring view |
+| `/admin-dashboard` | `AdminDashboard` | Admin fleet management |
+| (push) | `AddDevicePage` | Register new hardware device |
+| (push) | `AdminDeviceDetailsPage` | Admin detailed device view |
+| (push) | `ParameterDetailPage` | Individual parameter analytics |
+| (push) | `ReadingHistoryPage` | Historical reading browser |
+| (push) | `TestHistoryPage` | Test Now results history |
+
+---
+
+## 11. Code Statistics
+
+| Component | Files | Total Lines (approx) |
+| :--- | :--- | :--- |
+| **Firmware** | 1 source + 2 config | ~260 |
+| **Models** | 2 | ~480 |
+| **Services** | 10 | ~2,600 |
+| **Pages** | 8 | ~4,600 |
+| **Widgets** | 1 | ~580 |
+| **App Entry** | 1 | ~107 |
+| **Total Flutter** | 22 | ~8,370 |
+| **Grand Total** | ~25 files | ~8,630 |
+
+---
+
+## 12. Implementation Status
+
+| Component | Status | Notes |
+| :--- | :--- | :--- |
+| ESP32 Firmware | ✅ Complete | Tested, flashed, sending data |
+| Wi-Fi Captive Portal | ✅ Complete | WiFiManager integration |
+| Firebase Backend | ✅ Complete | Auth + Firestore + Security Rules |
+| Authentication (Login/Register) | ✅ Complete | Role-based routing |
+| User Dashboard | ✅ Complete | Live data, gauges, graphs, Test Now |
+| Admin Dashboard | ✅ Complete | Fleet view, filtering, device management |
+| Alert System | ✅ Complete | Auto-generation + acknowledgement |
+| Test Now + History | ✅ Complete | Multi-sample averaging + Firestore persistence |
+| GPS Location | ✅ Complete | Geolocator integration |
+| LCD Display | ✅ Complete | Rotating 2-screen display |
+| APK Build | ✅ Complete | Android APK generated |
+
+---
+
+## 13. Future Scope
+
+- **SMS/Push Notifications** via Firebase Cloud Messaging for critical alerts
+- **Multi-parameter expansion** — Turbidity, Dissolved Oxygen, Conductivity sensors
+- **OTA Firmware Updates** for ESP32 over Wi-Fi
+- **Data Export** — CSV/PDF report generation from the app
+- **Machine Learning** — Predictive water quality forecasting
+- **Map View** — Google Maps integration showing all monitored locations
+- **Multi-language Support** for wider accessibility
+    </script>
+
+    <script>
+        // Get the markdown text
+        let markdown = document.getElementById('markdown-content').textContent;
+        // Transform mermaid blocks for the renderer
+        markdown = markdown.replace(/```mermaid([\s\S]*?)```/g, '<div class="mermaid">$1</div>');
+        
+        // Render Markdown to HTML
+        document.getElementById('content').innerHTML = marked.parse(markdown);
+        
+        // Initialize Mermaid
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+</html>

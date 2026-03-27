@@ -66,6 +66,7 @@ extension DeviceStatusExtension on DeviceStatus {
 class Device {
   final String deviceId;
   final String ownerUid;
+  final String? adminUid; // Added admin_uid field
   final String deviceName;
   final String deviceType; // e.g., "water_quality_sensor_v1"
   final String serialNumber;
@@ -73,7 +74,6 @@ class Device {
   final DeviceStatus status;
   final String apiKey;
   final DateTime? lastReadingTime;
-  final double batteryLevel; // 0-100
   final String firmwareVersion;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -82,6 +82,7 @@ class Device {
   Device({
     required this.deviceId,
     required this.ownerUid,
+    this.adminUid,
     required this.deviceName,
     required this.deviceType,
     required this.serialNumber,
@@ -89,16 +90,31 @@ class Device {
     required this.status,
     required this.apiKey,
     this.lastReadingTime,
-    required this.batteryLevel,
     required this.firmwareVersion,
     required this.createdAt,
     required this.updatedAt,
     this.metadata = const {},
   });
 
-  // Determine color based on status
+  // Effective status based on dynamic conditions (Heartbeat)
+  DeviceStatus get effectiveStatus {
+    // Maintenance and Inactive statuses are manual overrides and should be respected
+    if (status == DeviceStatus.maintenance || status == DeviceStatus.inactive) {
+      return status;
+    }
+
+    // Check heartbeat (10 minute threshold)
+    if (lastReadingTime == null) return DeviceStatus.offline;
+    final now = DateTime.now();
+    if (now.difference(lastReadingTime!).inMinutes < 10) {
+      return DeviceStatus.active;
+    }
+    return DeviceStatus.offline;
+  }
+
+  // Determine color based on effective status
   String get statusColor {
-    switch (status) {
+    switch (effectiveStatus) {
       case DeviceStatus.active:
         return '#10B981'; // Green
       case DeviceStatus.inactive:
@@ -112,7 +128,7 @@ class Device {
 
   // Get status icon
   String get statusIcon {
-    switch (status) {
+    switch (effectiveStatus) {
       case DeviceStatus.active:
         return '✓';
       case DeviceStatus.inactive:
@@ -126,30 +142,31 @@ class Device {
 
   // Check if device needs attention
   bool get needsAttention =>
-      status == DeviceStatus.offline ||
-      status == DeviceStatus.maintenance ||
-      batteryLevel < 20;
+      effectiveStatus == DeviceStatus.offline ||
+      effectiveStatus == DeviceStatus.maintenance;
 
   // Check if device is online
-  bool get isOnline => status == DeviceStatus.active;
+  bool get isOnline => effectiveStatus == DeviceStatus.active;
 
   factory Device.fromJson(Map<String, dynamic> json) {
     return Device(
-      deviceId: json['device_id'] ?? '',
-      ownerUid: json['owner_uid'] ?? '',
-      deviceName: json['device_name'] ?? '',
-      deviceType: json['device_type'] ?? '',
-      serialNumber: json['serial_number'] ?? '',
+      deviceId: json['device_id'] ?? json['deviceId'] ?? '',
+      ownerUid: json['owner_uid'] ?? json['ownerUid'] ?? '',
+      adminUid: json['admin_uid'] ?? json['adminUid'],
+      deviceName: json['device_name'] ?? json['deviceName'] ?? '',
+      deviceType: json['device_type'] ?? json['deviceType'] ?? '',
+      serialNumber: json['serial_number'] ?? json['serialNumber'] ?? '',
       location: DeviceLocation.fromJson(json['location'] ?? {}),
       status: _parseStatus(json['status']),
-      apiKey: json['api_key'] ?? '',
+      apiKey: json['api_key'] ?? json['apiKey'] ?? '',
       lastReadingTime: json['last_reading_time'] != null
           ? DateTime.parse(json['last_reading_time'])
-          : null,
-      batteryLevel: (json['battery_level'] ?? 0).toDouble(),
-      firmwareVersion: json['firmware_version'] ?? '',
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
+          : json['lastReadingTime'] != null
+              ? DateTime.parse(json['lastReadingTime'])
+              : null,
+      firmwareVersion: json['firmware_version'] ?? json['firmwareVersion'] ?? '',
+      createdAt: DateTime.parse(json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updated_at'] ?? json['updatedAt'] ?? DateTime.now().toIso8601String()),
       metadata: json['metadata'] ?? {},
     );
   }
@@ -173,6 +190,7 @@ class Device {
     return {
       'device_id': deviceId,
       'owner_uid': ownerUid,
+      if (adminUid != null) 'admin_uid': adminUid,
       'device_name': deviceName,
       'device_type': deviceType,
       'serial_number': serialNumber,
@@ -180,7 +198,6 @@ class Device {
       'status': status.value,
       'api_key': apiKey,
       'last_reading_time': lastReadingTime?.toIso8601String(),
-      'battery_level': batteryLevel,
       'firmware_version': firmwareVersion,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -191,6 +208,7 @@ class Device {
   Device copyWith({
     String? deviceId,
     String? ownerUid,
+    String? adminUid,
     String? deviceName,
     String? deviceType,
     String? serialNumber,
@@ -198,7 +216,6 @@ class Device {
     DeviceStatus? status,
     String? apiKey,
     DateTime? lastReadingTime,
-    double? batteryLevel,
     String? firmwareVersion,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -207,6 +224,7 @@ class Device {
     return Device(
       deviceId: deviceId ?? this.deviceId,
       ownerUid: ownerUid ?? this.ownerUid,
+      adminUid: adminUid ?? this.adminUid,
       deviceName: deviceName ?? this.deviceName,
       deviceType: deviceType ?? this.deviceType,
       serialNumber: serialNumber ?? this.serialNumber,
@@ -214,7 +232,6 @@ class Device {
       status: status ?? this.status,
       apiKey: apiKey ?? this.apiKey,
       lastReadingTime: lastReadingTime ?? this.lastReadingTime,
-      batteryLevel: batteryLevel ?? this.batteryLevel,
       firmwareVersion: firmwareVersion ?? this.firmwareVersion,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

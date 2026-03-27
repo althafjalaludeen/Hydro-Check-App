@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "water_quality_app" "\0"
+            VALUE "FileDescription", "HydroCheck" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "water_quality_app" "\0"
+            VALUE "InternalName", "hydrocheck" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "water_quality_app.exe" "\0"
-            VALUE "ProductName", "water_quality_app" "\0"
+            VALUE "OriginalFilename", "hydrocheck.exe" "\0"
+            VALUE "ProductName", "HydroCheck" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

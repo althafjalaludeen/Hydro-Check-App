@@ -91,20 +91,21 @@ class ReadingHistoryPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final reading = readingHistory[index];
                 DateTime? timestamp;
-                
+
                 // Try to get timestamp from readingHistoryWithTime
-                if (readingHistoryWithTime != null && index < readingHistoryWithTime!.length) {
+                if (readingHistoryWithTime != null &&
+                    index < readingHistoryWithTime!.length) {
                   final readingWithTime = readingHistoryWithTime![index];
                   final timestampValue = readingWithTime['timestamp'];
                   if (timestampValue is DateTime) {
                     timestamp = timestampValue;
                   }
                 }
-                
-                final timestampText = timestamp != null 
+
+                final timestampText = timestamp != null
                     ? _formatTimestamp(timestamp)
                     : 'Unknown time';
-                
+
                 return Card(
                   elevation: 2,
                   margin: const EdgeInsets.symmetric(vertical: 8),
@@ -140,55 +141,33 @@ class ReadingHistoryPage extends StatelessWidget {
                     ),
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildHistoryReadingRow(
                               'pH Level',
-                              _formatReading(reading['pH']!, 2),
+                              _formatReading(reading['pH'] ?? 0.0, 2),
                               '',
-                              _getStatusColor('pH', reading['pH']!),
+                              _getStatusColor('pH', reading['pH'] ?? 0.0),
                               'Safe: 6.5 - 8.5',
                             ),
                             const Divider(height: 16),
                             _buildHistoryReadingRow(
-                              'Turbidity',
-                              _formatReading(reading['turbidity']!, 2),
-                              'NTU',
-                              _getStatusColor('turbidity', reading['turbidity']!),
-                              'Safe: < 5',
-                            ),
-                            const Divider(height: 16),
-                            _buildHistoryReadingRow(
                               'Temperature',
-                              _formatReading(reading['temperature']!, 1),
+                              _formatReading(reading['temperature'] ?? 0.0, 1),
                               '°C',
-                              _getStatusColor('temperature', reading['temperature']!),
+                              _getStatusColor(
+                                  'temperature', reading['temperature'] ?? 0.0),
                               'Safe: < 25°C',
                             ),
                             const Divider(height: 16),
                             _buildHistoryReadingRow(
-                              'Chlorine',
-                              _formatReading(reading['chlorine']!, 2),
-                              'mg/L',
-                              _getStatusColor('chlorine', reading['chlorine']!),
-                              'Safe: 0.2 - 2.5',
-                            ),
-                            const Divider(height: 16),
-                            _buildHistoryReadingRow(
-                              'Dissolved Oxygen',
-                              _formatReading(reading['dissolvedOxygen'] ?? 0, 2),
-                              'mg/L',
-                              _getStatusColor('dissolvedOxygen', reading['dissolvedOxygen'] ?? 0),
-                              'Safe: > 5',
-                            ),
-                            const Divider(height: 16),
-                            _buildHistoryReadingRow(
                               'TDS',
-                              _formatReading(reading['tds']!, 0),
+                              _formatReading(reading['tds'] ?? 0.0, 0),
                               'mg/L',
-                              _getStatusColor('tds', reading['tds']!),
+                              _getStatusColor('tds', reading['tds'] ?? 0.0),
                               'Safe: < 500',
                             ),
                           ],

@@ -1,5 +1,4 @@
 // Device Service - Manages device data and operations
-import 'dart:math';
 import '../models/device_model.dart';
 
 class DeviceService {
@@ -31,7 +30,6 @@ class DeviceService {
         status: DeviceStatus.active,
         apiKey: 'sk_live_dev001',
         lastReadingTime: DateTime.now(),
-        batteryLevel: 95.5,
         firmwareVersion: '1.2.3',
         createdAt: DateTime(2025, 1, 1),
         updatedAt: DateTime.now(),
@@ -58,7 +56,6 @@ class DeviceService {
         status: DeviceStatus.active,
         apiKey: 'sk_live_dev002',
         lastReadingTime: DateTime.now().subtract(const Duration(minutes: 5)),
-        batteryLevel: 87.2,
         firmwareVersion: '1.2.3',
         createdAt: DateTime(2025, 1, 5),
         updatedAt: DateTime.now(),
@@ -85,7 +82,6 @@ class DeviceService {
         status: DeviceStatus.offline,
         apiKey: 'sk_live_dev003',
         lastReadingTime: DateTime.now().subtract(const Duration(hours: 2)),
-        batteryLevel: 15.0,
         firmwareVersion: '1.3.0',
         createdAt: DateTime(2025, 1, 10),
         updatedAt: DateTime.now(),
@@ -114,7 +110,6 @@ class DeviceService {
         status: DeviceStatus.active,
         apiKey: 'sk_live_dev004',
         lastReadingTime: DateTime.now(),
-        batteryLevel: 92.0,
         firmwareVersion: '1.2.3',
         createdAt: DateTime(2025, 1, 8),
         updatedAt: DateTime.now(),
@@ -187,16 +182,6 @@ class DeviceService {
     return false;
   }
 
-  // Update battery level (simulated)
-  Future<bool> updateBatteryLevel(String deviceId, String userUid, double newLevel) async {
-    final device = await getDeviceById(deviceId, userUid);
-    if (device != null) {
-      final updated = device.copyWith(batteryLevel: newLevel);
-      return updateDevice(updated, userUid);
-    }
-    return false;
-  }
-
   // Get device count for user
   Future<int> getDeviceCount(String userUid) async {
     final devices = await getUserDevices(userUid);
@@ -222,15 +207,11 @@ class DeviceService {
     int activeCount = 0;
     int offlineCount = 0;
     int maintenanceCount = 0;
-    double totalBattery = 0;
-    int lowBatteryCount = 0;
 
     for (var device in devices) {
       if (device.status == DeviceStatus.active) activeCount++;
       if (device.status == DeviceStatus.offline) offlineCount++;
       if (device.status == DeviceStatus.maintenance) maintenanceCount++;
-      totalBattery += device.batteryLevel;
-      if (device.batteryLevel < 20) lowBatteryCount++;
     }
 
     return {
@@ -238,8 +219,6 @@ class DeviceService {
       'active_devices': activeCount,
       'offline_devices': offlineCount,
       'maintenance_devices': maintenanceCount,
-      'average_battery': devices.isEmpty ? 0 : totalBattery / devices.length,
-      'low_battery_devices': lowBatteryCount,
       'devices_needing_attention': devices.where((d) => d.needsAttention).length,
     };
   }
@@ -248,12 +227,7 @@ class DeviceService {
   Future<void> simulateDeviceUpdate(String deviceId, String userUid) async {
     final device = await getDeviceById(deviceId, userUid);
     if (device != null) {
-      // Simulate battery drain
-      double newBattery = device.batteryLevel - Random().nextDouble() * 0.5;
-      newBattery = newBattery.clamp(0, 100);
-
       final updated = device.copyWith(
-        batteryLevel: newBattery,
         lastReadingTime: DateTime.now(),
       );
       await updateDevice(updated, userUid);

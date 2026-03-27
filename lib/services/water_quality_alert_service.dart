@@ -39,7 +39,8 @@ class WaterQualityAlert {
 
 class WaterQualityChecker {
   // Check water quality and return list of unsafe parameters
-  static List<WaterQualityAlert> checkWaterQuality(Map<String, double> readings) {
+  static List<WaterQualityAlert> checkWaterQuality(
+      Map<String, double> readings) {
     final alerts = <WaterQualityAlert>[];
 
     // pH Check (Safe: 6.5-8.5)
@@ -84,9 +85,9 @@ class WaterQualityChecker {
         WaterQualityAlert(
           parameter: 'Temperature',
           currentValue: temp,
-          maxSafe: 25.0,
+          maxSafe: 32.0,
           unit: '°C',
-          description: temp > 25.0
+          description: temp > 32.0
               ? 'Water temperature is too high. May promote bacterial growth.'
               : 'Temperature is within safe range.',
         ),
@@ -149,7 +150,9 @@ class WaterQualityChecker {
 
   // Get only unsafe alerts
   static List<WaterQualityAlert> getUnsafeAlerts(Map<String, double> readings) {
-    return checkWaterQuality(readings).where((alert) => alert.isUnsafe).toList();
+    return checkWaterQuality(readings)
+        .where((alert) => alert.isUnsafe)
+        .toList();
   }
 
   // Check if water is safe
@@ -195,7 +198,8 @@ class WaterQualityChecker {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.1),
-                      border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+                      border:
+                          Border.all(color: Colors.red.withValues(alpha: 0.5)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -203,7 +207,8 @@ class WaterQualityChecker {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.error, color: Colors.red, size: 20),
+                            const Icon(Icons.error,
+                                color: Colors.red, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -238,7 +243,8 @@ class WaterQualityChecker {
                         const SizedBox(height: 8),
                         Text(
                           alert.description,
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style:
+                              const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -253,7 +259,8 @@ class WaterQualityChecker {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               child: const Text('OK - I Understand'),
             ),

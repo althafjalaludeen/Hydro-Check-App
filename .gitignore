@@ -12,3 +12,9 @@ pubspec.lock
 .DS_Store
 .env
 .env.local
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+.dart_tool/
+.idea/
+.vscode/
+*.iml

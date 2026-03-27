@@ -70,50 +70,6 @@ class DeviceStatusBadge extends StatelessWidget {
   }
 }
 
-// Battery Level Indicator
-class BatteryIndicator extends StatelessWidget {
-  final double batteryLevel;
-  final double size;
-
-  const BatteryIndicator({
-    super.key,
-    required this.batteryLevel,
-    this.size = 24,
-  });
-
-  Color get _color {
-    if (batteryLevel >= 50) return Colors.green;
-    if (batteryLevel >= 20) return Colors.orange;
-    return Colors.red;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: '${batteryLevel.toStringAsFixed(1)}% Battery',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.battery_std,
-            size: size,
-            color: _color,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '${batteryLevel.toInt()}%',
-            style: TextStyle(
-              color: _color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // Device Info Row
 class DeviceInfoRow extends StatelessWidget {
   final IconData icon;
@@ -237,7 +193,7 @@ class DeviceCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   DeviceStatusBadge(
-                    status: device.status,
+                    status: device.effectiveStatus,
                     needsAttention: device.needsAttention,
                   ),
                 ],
@@ -261,19 +217,6 @@ class DeviceCard extends StatelessWidget {
                 icon: Icons.domain,
                 label: 'Room',
                 value: device.location.room,
-              ),
-              const SizedBox(height: 10),
-
-              // Battery Status
-              DeviceInfoRow(
-                icon: Icons.battery_charging_full,
-                label: 'Battery Level',
-                value: '${device.batteryLevel.toStringAsFixed(1)}%',
-                valueColor: device.batteryLevel >= 50
-                    ? Colors.green
-                    : device.batteryLevel >= 20
-                        ? Colors.orange
-                        : Colors.red,
               ),
               const SizedBox(height: 10),
 
@@ -379,8 +322,6 @@ class DeviceCard extends StatelessWidget {
       return 'Device is offline - check connection';
     } else if (device.status == DeviceStatus.maintenance) {
       return 'Device is under maintenance';
-    } else if (device.batteryLevel < 20) {
-      return 'Low battery - replacement needed soon';
     }
     return 'Device needs attention';
   }
@@ -391,14 +332,13 @@ class DeviceListHeader extends StatelessWidget {
   final int deviceCount;
   final int activeDevices;
   final int offlineDevices;
-  final double averageBattery;
+
 
   const DeviceListHeader({
     super.key,
     required this.deviceCount,
     required this.activeDevices,
     required this.offlineDevices,
-    required this.averageBattery,
   });
 
   @override
@@ -437,13 +377,6 @@ class DeviceListHeader extends StatelessWidget {
                 value: offlineDevices.toString(),
                 icon: Icons.error,
                 color: Colors.red,
-              ),
-              const SizedBox(width: 12),
-              _StatCard(
-                label: 'Avg Battery',
-                value: '${averageBattery.toInt()}%',
-                icon: Icons.battery_std,
-                color: averageBattery >= 50 ? Colors.green : Colors.orange,
               ),
             ],
           ),

@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "596094540104",
-    "project_id": "hydro-check-743b2",
-    "storage_bucket": "hydro-check-743b2.firebasestorage.app"
+    "project_number": "217576500634",
+    "project_id": "hydrocheck-e882a",
+    "storage_bucket": "hydrocheck-e882a.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:596094540104:android:45e569128a7423d0583b7d",
+        "mobilesdk_app_id": "1:217576500634:android:0922068e70ec9e58dede23",
         "android_client_info": {
           "package_name": "com.example.water_quality_app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDH5JCNzBwFlArQYzaWnypx5DWJM1BVJ44"
+          "current_key": "AIzaSyBr6koS5B6IfNvlI5u_SpArr7qfPwVQjMU"
         }
       ],
       "services": {

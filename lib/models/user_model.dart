@@ -5,13 +5,17 @@ class User {
   final String email;
   final String fullName;
   final String mobileNumber; // Added mobile number
-  final String role; // "user" or "admin"
+  final String role; // "user", "admin", or "subordinate"
   final int deviceCount;
   final String location; // Building/Organization name
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
   final Map<String, dynamic> preferences;
+  final String? assignedZone; // Zone ID for subordinates
+  final String? assignedBy; // Admin UID who assigned this subordinate
+  final String? adminUid; // Admin UID who manages this user/subordinate
+  final List<String> permissions; // e.g. ['view_devices', 'view_alerts']
 
   User({
     required this.uid,
@@ -25,6 +29,10 @@ class User {
     required this.createdAt,
     required this.updatedAt,
     this.preferences = const {},
+    this.assignedZone,
+    this.assignedBy,
+    this.adminUid,
+    this.permissions = const [],
   });
 
   // Determine role based on device count
@@ -46,6 +54,10 @@ class User {
       createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
       preferences: json['preferences'] ?? {},
+      assignedZone: json['assigned_zone'],
+      assignedBy: json['assigned_by'],
+      adminUid: json['admin_uid'],
+      permissions: List<String>.from(json['permissions'] ?? []),
     );
   }
 
@@ -63,6 +75,10 @@ class User {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'preferences': preferences,
+      'assigned_zone': assignedZone,
+      'assigned_by': assignedBy,
+      'admin_uid': adminUid,
+      'permissions': permissions,
     };
   }
 
@@ -79,6 +95,10 @@ class User {
     DateTime? createdAt,
     DateTime? updatedAt,
     Map<String, dynamic>? preferences,
+    String? assignedZone,
+    String? assignedBy,
+    String? adminUid,
+    List<String>? permissions,
   }) {
     return User(
       uid: uid ?? this.uid,
@@ -92,14 +112,32 @@ class User {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       preferences: preferences ?? this.preferences,
+      assignedZone: assignedZone ?? this.assignedZone,
+      assignedBy: assignedBy ?? this.assignedBy,
+      adminUid: adminUid ?? this.adminUid,
+      permissions: permissions ?? this.permissions,
     );
   }
 
   // Check if user is admin
   bool get isAdmin => role == 'admin';
 
+  // Check if user is subordinate
+  bool get isSubordinate => role == 'subordinate';
+
+  // Check if user is end user
+  bool get isEndUser => role == 'user';
+
   // Check if user has multiple devices
   bool get hasMultipleDevices => deviceCount > 1;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is User && runtimeType == other.runtimeType && uid == other.uid;
+
+  @override
+  int get hashCode => uid.hashCode;
 }
 
 // Authentication Response Model
@@ -161,6 +199,7 @@ class RegistrationRequest {
   final String mobileNumber;
   final String location;
   final Map<String, dynamic> preferences;
+  final String? role;
 
   RegistrationRequest({
     required this.email,
@@ -169,6 +208,7 @@ class RegistrationRequest {
     required this.mobileNumber,
     required this.location,
     this.preferences = const {},
+    this.role,
   });
 
   Map<String, dynamic> toJson() {
@@ -179,6 +219,7 @@ class RegistrationRequest {
       'mobile_number': mobileNumber,
       'location': location,
       'preferences': preferences,
+      if (role != null) 'role': role,
     };
   }
 }

@@ -4,6 +4,12 @@ gradle-wrapper.jar
 /gradlew
 /gradlew.bat
 /local.properties
+#added
+.dart_tool/
+.idea/
+.vscode/
+*.iml
+#added
 GeneratedPluginRegistrant.java
 .cxx/
 
