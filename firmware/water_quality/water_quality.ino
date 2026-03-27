@@ -17,10 +17,10 @@
 // WiFi is configured via captive portal (no hardcoded credentials)
 
 // Firebase Project Credentials
-#define API_KEY " Your API Key Value "
-#define USER_EMAIL " Your Email Value "
-#define USER_PASSWORD " Your Password Value "
-#define PROJECT_ID " Your Project ID Value "
+#define API_KEY "YOUR_FIREBASE_API_KEY"
+#define USER_EMAIL "YOUR_FIREBASE_USER_EMAIL"
+#define USER_PASSWORD "YOUR_FIREBASE_USER_PASSWORD"
+#define PROJECT_ID "YOUR_FIREBASE_PROJECT_ID"
 
 // Device Info
 #define DEVICE_ID "device_001"

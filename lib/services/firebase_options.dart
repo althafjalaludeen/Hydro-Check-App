@@ -34,42 +34,42 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: ' Your API Key Value ',
-    appId: ' Your App ID Value ',
-    messagingSenderId: ' Your Messaging Sender ID Value ',
-    projectId: ' Your Project ID Value ',
-    authDomain: ' Your Auth Domain Value ',
-    databaseURL: ' Your Database URL Value ',
-    storageBucket: ' Your Storage Bucket Value ',
-    measurementId: ' Your Measurement ID Value ',
+    apiKey: 'YOUR_WEB_API_KEY',
+    appId: 'YOUR_WEB_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    authDomain: 'YOUR_AUTH_DOMAIN',
+    databaseURL: 'YOUR_DATABASE_URL',
+    storageBucket: 'YOUR_STORAGE_BUCKET',
+    measurementId: 'YOUR_MEASUREMENT_ID',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: ' Your API Key Value ',
-    appId: ' Your App ID Value ',
-    messagingSenderId: ' Your Messaging Sender ID Value ',
-    projectId: ' Your Project ID Value ',
-    databaseURL: ' Your Database URL Value ',
-    storageBucket: ' Your Storage Bucket Value ',
+    apiKey: 'YOUR_ANDROID_API_KEY',
+    appId: 'YOUR_ANDROID_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    databaseURL: 'YOUR_DATABASE_URL',
+    storageBucket: 'YOUR_STORAGE_BUCKET',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: ' Your API Key Value ',
-    appId: ' Your App ID Value ',
-    messagingSenderId: ' Your Messaging Sender ID Value ',
-    projectId: ' Your Project ID Value ',
-    databaseURL: ' Your Database URL Value ',
-    storageBucket: ' Your Storage Bucket Value ',
+    apiKey: 'YOUR_IOS_API_KEY',
+    appId: 'YOUR_IOS_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    databaseURL: 'YOUR_DATABASE_URL',
+    storageBucket: 'YOUR_STORAGE_BUCKET',
     iosBundleId: 'com.example.waterQualityApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: ' Your API Key Value ',
-    appId: ' Your App ID Value ',
-    messagingSenderId: ' Your Messaging Sender ID Value ',
-    projectId: ' Your Project ID Value ',
-    databaseURL: ' Your Database URL Value ',
-    storageBucket: ' Your Storage Bucket Value ',
+    apiKey: 'YOUR_MACOS_API_KEY',
+    appId: 'YOUR_MACOS_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    databaseURL: 'YOUR_DATABASE_URL',
+    storageBucket: 'YOUR_STORAGE_BUCKET',
     iosBundleId: 'com.example.waterQualityApp',
   );
 }
