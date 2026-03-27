@@ -174,8 +174,8 @@ graph LR
 
 ## 4. Firmware Design
 
-**Source:** [main.cpp](file:///x:/clgProject/hydrocheck/firmware/src/main.cpp) (239 lines)  
-**Build System:** PlatformIO ([platformio.ini](file:///x:/clgProject/hydrocheck/firmware/platformio.ini))
+**Source:** [main.cpp](firmware/src/main.cpp) (239 lines)  
+**Build System:** PlatformIO ([platformio.ini](firmware/platformio.ini))
 
 ### 4.1 Libraries Used
 
@@ -232,7 +232,7 @@ Each document contains: `readingId`, `deviceId`, `timestamp` (ISO 8601), `parame
 
 ## 5. Mobile Application (Flutter)
 
-**Entry Point:** [main.dart](file:///x:/clgProject/hydrocheck/lib/main.dart)
+**Entry Point:** [main.dart](lib/main.dart)
 
 ### 5.1 Project Dependencies (`pubspec.yaml`)
 
@@ -281,7 +281,7 @@ lib/
 
 ### 5.3 Data Models
 
-#### User Model ([user_model.dart](file:///x:/clgProject/hydrocheck/lib/models/user_model.dart))
+#### User Model ([user_model.dart](lib/models/user_model.dart))
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `uid` | String | Firebase Auth UID |
@@ -296,7 +296,7 @@ lib/
 
 > Includes helper classes: `AuthResponse`, `RegistrationRequest`, `LoginRequest`, `UserUpdate`
 
-#### Device Model ([device_model.dart](file:///x:/clgProject/hydrocheck/lib/models/device_model.dart))
+#### Device Model ([device_model.dart](lib/models/device_model.dart))
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `deviceId` | String | Unique device identifier |
@@ -485,13 +485,13 @@ sequenceDiagram
 
 | Service | File | Key Responsibilities |
 | :--- | :--- | :--- |
-| `FirebaseService` | [firebase_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_service.dart) | Firebase initialization |
-| `FirebaseAuthenticationService` | [firebase_authentication_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_authentication_service.dart) | Register, Login, Logout, Profile update (Singleton) |
-| `FirebaseDeviceService` | [firebase_device_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_device_service.dart) | Device CRUD, status updates, real-time streams (Singleton) |
-| `FirebaseWaterReadingService` | [firebase_water_reading_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_water_reading_service.dart) | Save readings, history queries, averages, cleanup |
-| `FirebaseAlertService` | [firebase_alert_service.dart](file:///x:/clgProject/hydrocheck/lib/services/firebase_alert_service.dart) | Alert creation (water quality, battery, offline), acknowledgement |
-| `WaterQualityChecker` | [water_quality_alert_service.dart](file:///x:/clgProject/hydrocheck/lib/services/water_quality_alert_service.dart) | WHO-standard safety evaluation, UI alert dialogs |
-| `LocationService` | [location_service.dart](file:///x:/clgProject/hydrocheck/lib/services/location_service.dart) | GPS permission handling, coordinate capture |
+| `FirebaseService` | [firebase_service.dart](lib/services/firebase_service.dart) | Firebase initialization |
+| `FirebaseAuthenticationService` | [firebase_authentication_service.dart](lib/services/firebase_authentication_service.dart) | Register, Login, Logout, Profile update (Singleton) |
+| `FirebaseDeviceService` | [firebase_device_service.dart](lib/services/firebase_device_service.dart) | Device CRUD, status updates, real-time streams (Singleton) |
+| `FirebaseWaterReadingService` | [firebase_water_reading_service.dart](lib/services/firebase_water_reading_service.dart) | Save readings, history queries, averages, cleanup |
+| `FirebaseAlertService` | [firebase_alert_service.dart](lib/services/firebase_alert_service.dart) | Alert creation (water quality, battery, offline), acknowledgement |
+| `WaterQualityChecker` | [water_quality_alert_service.dart](lib/services/water_quality_alert_service.dart) | WHO-standard safety evaluation, UI alert dialogs |
+| `LocationService` | [location_service.dart](lib/services/location_service.dart) | GPS permission handling, coordinate capture |
 
 ---
 

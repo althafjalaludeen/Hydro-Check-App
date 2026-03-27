@@ -267,7 +267,7 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
                         enabled: !_isLoading,
                         decoration: InputDecoration(
                           labelText: 'Email Address',
-                          hintText: 'admin@building.com',
+                          hintText: 'your@email.com',
                           prefixIcon: const Icon(Icons.email),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -296,7 +296,7 @@ class _EnhancedLoginPageState extends State<EnhancedLoginPage> {
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          hintText: '123',
+                          hintText: 'your password',
                           prefixIcon: const Icon(Icons.lock),
                           suffixIcon: IconButton(
                             icon: Icon(
