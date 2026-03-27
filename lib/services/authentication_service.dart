@@ -25,9 +25,9 @@ class AuthenticationService {
 
   // Mock database of users (in production, this would be a real backend)
   static final Map<String, Map<String, dynamic>> _userDatabase = {
-    'admin@building.com': {
+    'demo_admin@example.com': {
       'uid': 'user_001',
-      'email': 'admin@building.com',
+      'email': 'demo_admin@example.com',
       'password_hash': _hashPassword(' Your Password Value '),
       'full_name': 'Admin User',
       'mobile_number': '+1-555-0101',
@@ -42,9 +42,9 @@ class AuthenticationService {
         'notifications_enabled': true,
       },
     },
-    'user@building.com': {
+    'demo_user@example.com': {
       'uid': 'user_002',
-      'email': 'user@building.com',
+      'email': 'demo_user@example.com',
       'password_hash': _hashPassword(' Your Password Value '),
       'full_name': 'Regular User',
       'mobile_number': '+1-555-0102',
