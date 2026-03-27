@@ -22,9 +22,9 @@
 
 // Firebase Project Credentials
 #define API_KEY " Your API Key Value "
-#define USER_EMAIL "mainprojectstc@gmail.com"
-#define USER_PASSWORD "Althaf@123"
-#define PROJECT_ID "hydrocheck-e882a"
+#define USER_EMAIL " Your Email Value "
+#define USER_PASSWORD " Your Password Value "
+#define PROJECT_ID " Your Project ID Value "
 
 // Device Info
 #define DEVICE_ID "device_001"

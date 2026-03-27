@@ -28,7 +28,7 @@ class AuthenticationService {
     'admin@building.com': {
       'uid': 'user_001',
       'email': 'admin@building.com',
-      'password_hash': _hashPassword('123'),
+      'password_hash': _hashPassword(' Your Password Value '),
       'full_name': 'Admin User',
       'mobile_number': '+1-555-0101',
       'role': 'admin',
@@ -45,7 +45,7 @@ class AuthenticationService {
     'user@building.com': {
       'uid': 'user_002',
       'email': 'user@building.com',
-      'password_hash': _hashPassword('123'),
+      'password_hash': _hashPassword(' Your Password Value '),
       'full_name': 'Regular User',
       'mobile_number': '+1-555-0102',
       'role': 'user',
