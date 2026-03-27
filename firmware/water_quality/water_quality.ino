@@ -17,10 +17,10 @@
 // WiFi is configured via captive portal (no hardcoded credentials)
 
 // Firebase Project Credentials
-#define API_KEY "AIzaSyBr6koS5B6IfNvlI5u_SpArr7qfPwVQjMU"
-#define USER_EMAIL "mainprojectstc@gmail.com"
-#define USER_PASSWORD "mainproject@stc123"
-#define PROJECT_ID "hydrocheck-e882a"
+#define API_KEY "YOUR_FIREBASE_API_KEY"
+#define USER_EMAIL "YOUR_FIREBASE_USER_EMAIL"
+#define USER_PASSWORD "YOUR_FIREBASE_USER_PASSWORD"
+#define PROJECT_ID "YOUR_FIREBASE_PROJECT_ID"
 
 // Device Info
 #define DEVICE_ID "device_001"

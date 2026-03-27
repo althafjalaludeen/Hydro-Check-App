@@ -34,42 +34,42 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'TODO: Add Web API Key',
-    appId: 'TODO: Add Web App ID',
-    messagingSenderId: '217576500634',
-    projectId: 'hydrocheck-e882a',
-    authDomain: 'hydrocheck-e882a.firebaseapp.com',
-    databaseURL: 'https://hydrocheck-e882a.firebaseio.com',
-    storageBucket: 'hydrocheck-e882a.firebasestorage.app',
-    measurementId: 'TODO: Add Web Measurement ID',
+    apiKey: 'YOUR_WEB_API_KEY',
+    appId: 'YOUR_WEB_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    authDomain: 'YOUR_AUTH_DOMAIN',
+    databaseURL: 'YOUR_DATABASE_URL',
+    storageBucket: 'YOUR_STORAGE_BUCKET',
+    measurementId: 'YOUR_MEASUREMENT_ID',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'Your API Key',
-    appId: '1:217576500634:android:0922068e70ec9e58dede23',
-    messagingSenderId: '217576500634',
-    projectId: 'hydrocheck-e882a',
-    databaseURL: 'https://hydrocheck-e882a.firebaseio.com',
-    storageBucket: 'hydrocheck-e882a.firebasestorage.app',
+    apiKey: 'YOUR_ANDROID_API_KEY',
+    appId: 'YOUR_ANDROID_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    databaseURL: 'YOUR_DATABASE_URL',
+    storageBucket: 'YOUR_STORAGE_BUCKET',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'TODO: Add iOS API Key',
-    appId: 'TODO: Add iOS App ID',
-    messagingSenderId: '217576500634',
-    projectId: 'hydrocheck-e882a',
-    databaseURL: 'https://hydrocheck-e882a.firebaseio.com',
-    storageBucket: 'hydrocheck-e882a.firebasestorage.app',
+    apiKey: 'YOUR_IOS_API_KEY',
+    appId: 'YOUR_IOS_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    databaseURL: 'YOUR_DATABASE_URL',
+    storageBucket: 'YOUR_STORAGE_BUCKET',
     iosBundleId: 'com.example.waterQualityApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'TODO: Add MacOS API Key',
-    appId: 'TODO: Add MacOS App ID',
-    messagingSenderId: '217576500634',
-    projectId: 'hydrocheck-e882a',
-    databaseURL: 'https://hydrocheck-e882a.firebaseio.com',
-    storageBucket: 'hydrocheck-e882a.firebasestorage.app',
+    apiKey: 'YOUR_MACOS_API_KEY',
+    appId: 'YOUR_MACOS_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    databaseURL: 'YOUR_DATABASE_URL',
+    storageBucket: 'YOUR_STORAGE_BUCKET',
     iosBundleId: 'com.example.waterQualityApp',
   );
 }

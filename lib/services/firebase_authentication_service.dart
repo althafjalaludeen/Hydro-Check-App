@@ -105,7 +105,7 @@ class FirebaseAuthenticationService {
           fullName: request.fullName,
           mobileNumber: request.mobileNumber,
           role: request.role ??
-              'admin', // New users are admins by default via signup
+              'user', // New self-registered users are regular users by default
           deviceCount: 0,
           location: request.location,
           isActive: true,
@@ -229,7 +229,7 @@ class FirebaseAuthenticationService {
         if (userDoc.exists) {
           _currentUser = User.fromJson(userDoc.data() as Map<String, dynamic>);
           _authToken = await fbUser.getIdToken();
-          print('✅ User session restored: ${_currentUser?.email}');
+          print('✅ User session restored');
         }
       }
     } catch (e) {
@@ -275,6 +275,8 @@ class FirebaseAuthenticationService {
     required String newRole,
     String? assignedZone,
   }) async {
+    if (_currentUser == null) throw Exception('No user logged in');
+    if (!isAdmin) throw Exception('Permission denied: admin access required');
     try {
       final updates = <String, dynamic>{
         'role': newRole,
@@ -379,6 +381,7 @@ class FirebaseAuthenticationService {
   }) async {
     try {
       if (_currentUser == null) throw Exception('No user logged in');
+      if (!isAdmin) throw Exception('Permission denied: admin access required');
 
       // 1. Create user in Firebase Auth using a secondary app instance
       // This prevents the current Admin from being signed out.
@@ -417,7 +420,7 @@ class FirebaseAuthenticationService {
       );
 
       await _firestore.collection('users').doc(uid).set(newUser.toJson());
-      print('✅ Subordinate account created for $email with UID: $uid');
+      print('✅ Subordinate account created successfully');
     } catch (e) {
       print('❌ Error adding subordinate: $e');
       rethrow;
@@ -433,6 +436,7 @@ class FirebaseAuthenticationService {
   }) async {
     try {
       if (_currentUser == null) throw Exception('No user logged in');
+      if (!isAdmin) throw Exception('Permission denied: admin access required');
 
       // 1. Create user in Firebase Auth using a secondary app instance
       FirebaseApp tempApp = await Firebase.initializeApp(
@@ -467,7 +471,7 @@ class FirebaseAuthenticationService {
       );
 
       await _firestore.collection('users').doc(uid).set(newUser.toJson());
-      print('✅ User account created for $email with UID: $uid');
+      print('✅ User account created successfully');
     } catch (e) {
       print('❌ Error adding user: $e');
       rethrow;
@@ -476,6 +480,8 @@ class FirebaseAuthenticationService {
 
   /// Delete a user (Admin only)
   Future<void> deleteUser(String targetUid) async {
+    if (_currentUser == null) throw Exception('No user logged in');
+    if (!isAdmin) throw Exception('Permission denied: admin access required');
     try {
       await _firestore.collection('users').doc(targetUid).delete();
       print('✅ User deleted: $targetUid');

@@ -21,10 +21,10 @@
 // ---------------------------------------------------------------------------
 
 // Firebase Project Credentials
-#define API_KEY "AIzaSyBr6koS5B6IfNvlI5u_SpArr7qfPwVQjMU"
-#define USER_EMAIL "mainprojectstc@gmail.com"
-#define USER_PASSWORD "Althaf@123"
-#define PROJECT_ID "hydrocheck-e882a"
+#define API_KEY "YOUR_FIREBASE_API_KEY"
+#define USER_EMAIL "YOUR_FIREBASE_USER_EMAIL"
+#define USER_PASSWORD "YOUR_FIREBASE_USER_PASSWORD"
+#define PROJECT_ID "YOUR_FIREBASE_PROJECT_ID"
 
 // Device Info
 #define DEVICE_ID "device_001"
@@ -73,7 +73,9 @@ bool firebaseSignIn() {
   Serial.println("Authenticating with Firebase...");
 
   WiFiClientSecure client;
-  client.setInsecure(); // Skip SSL cert verification (saves RAM)
+  client.setInsecure(); // WARNING: Skips SSL certificate verification to save RAM on ESP32.
+                        // For production deployments, use client.setCACert() with the
+                        // appropriate CA certificate to prevent MITM attacks.
 
   HTTPClient http;
   String url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + String(API_KEY);
@@ -128,7 +130,7 @@ bool sendToFirestore(float ph, float temp, float tds, bool isSafe, const char* t
   }
 
   WiFiClientSecure client;
-  client.setInsecure();
+  client.setInsecure(); // WARNING: See above note about SSL verification.
 
   HTTPClient http;
 
